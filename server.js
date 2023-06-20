@@ -22,6 +22,8 @@ const PORT = Number(process.env.PORT) || 3000;
 // import routes
 const { userRouter } = require('./routes/user.route');
 
+const { errorHandler } = require('./helpers/error-handler');
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -53,6 +55,13 @@ app.post('/profile', (req, res) => {
 
   res.json(user);
 });
+
+app.all('*', (req, res, next) => {
+  return next();
+});
+
+// error handling
+app.use(errorHandler);
 
 //
 mongoose.connection.once('open', () => {

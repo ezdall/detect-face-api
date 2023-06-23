@@ -7,14 +7,13 @@ const userSchema = new Schema(
   {
     name: {
       type: String,
-      require: true,
       trim: true,
       minlength: 1,
       maxlength: 32
     },
     email: {
       type: String,
-      require: true,
+      required: true,
       trim: true,
       unique: true,
       match: [/.+@.+\..+/, 'Email must contain @'],
@@ -31,7 +30,7 @@ const userSchema = new Schema(
     },
     hashed_password: {
       type: String,
-      require: true
+      required: true
     },
     salt: {
       type: String
@@ -46,6 +45,12 @@ const userSchema = new Schema(
 /**
  *  pre save
  */
+// cannot be use 'if required"
+// userSchema.pre('save', function(next) {
+//  // eslint-disable-next-line
+//   this.name = this.email.split('@')[0];
+//   next();
+// });
 
 /**
  *  Statics
@@ -73,8 +78,8 @@ userSchema
 
 // validate this._password (virtual)
 userSchema.path('hashed_password').validate(function hashPassPathValidate(val) {
-  // min of 6 char
-  if (this._password && this._password.length < 6) {
+  // min of 5 char
+  if (this._password && this._password.length < 5) {
     // invalidates the incoming 'password'
     // Document#invalidate(<path>, <errorMsg>)
     this.invalidate('password', 'Password must be at least 6 chars');

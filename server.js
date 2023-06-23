@@ -32,25 +32,7 @@ app.use('/dist', express.static(path.join(__dirname, 'public')));
 
 app.use('/', [userRouter]);
 
-app.post('/register', (req, res) => {
-  res.json('register');
-});
-
-app.get('/profile/:userId', (req, res) => {
-  const { userId } = req.params;
-
-  res.json(userId);
-});
-
-app.post('/profile', (req, res) => {
-  const user = {
-    name: 'Sally',
-    hobby: 'soccer'
-  };
-
-  res.json(user);
-});
-
+// catch all
 app.all('*', (req, res, next) => {
   return next();
 });

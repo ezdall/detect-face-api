@@ -1,4 +1,21 @@
+const mongoose = require('mongoose');
+const _ = require('lodash');
+
 const User = require('../models/user.model');
+
+// GET A
+const getUser = async (req, res, next) => {
+  try {
+    // transfor to plain-js
+    const user = req.user.toObject();
+    user.id = user._id;
+    user.entries = user.history.length;
+
+    return res.json(user);
+  } catch (error) {
+    return next(error);
+  }
+};
 
 // GET ALL
 
@@ -6,7 +23,8 @@ const userLists = async (req, res, next) => {
   try {
     const users = await User.find()
       .select('-salt -hashed_password')
-      .lean();
+      .lean()
+      .exec();
 
     return res.json(users);
   } catch (error) {
@@ -37,6 +55,7 @@ const signin = async (req, res, next) => {
     // cant do .select(), due to validating password
     user.hashed_password = undefined;
     user.salt = undefined;
+    user.entries = user.history.length;
 
     return res.json(user);
   } catch (error) {
@@ -58,6 +77,7 @@ const register = async (req, res, next) => {
       return next(Error('invalid user'));
     }
 
+    // strip
     user.hashed_password = undefined;
     user.salt = undefined;
 
@@ -67,9 +87,36 @@ const register = async (req, res, next) => {
   }
 };
 
+const userById = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    if (!mongoose.isValidObjectId(userId)) {
+      return next(Error('wrong id number'));
+    }
+
+    const user = await User.findById(userId)
+      .select('-hashed_password -salt')
+      .exec();
+
+    if (!user) {
+      return next(Error('user not found'));
+    }
+
+    // mount
+    req.user = user;
+
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   signin,
   register,
   // logout,
-  userLists
+  getUser,
+  userLists,
+  userById
 };

@@ -1,3 +1,4 @@
+require('express-async-errors');
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
@@ -30,12 +31,6 @@ app.use(express.urlencoded({ extended: false }));
 app.use('/dist', express.static(path.join(__dirname, 'public')));
 
 app.use('/', [userRouter]);
-
-app.post('/signin', (req, res) => {
-  const { email, password } = req.body;
-
-  res.json('signin');
-});
 
 app.post('/register', (req, res) => {
   res.json('register');

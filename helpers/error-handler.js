@@ -80,9 +80,10 @@ const errorHandler = (error, req, res, next) => {
       .sendFile(path.join(__dirname, '..', 'views', '404.html'));
   }
 
-  if (req.accepts('json')) {
-    return res.status(errorStatusCode).json({ error: '404 not found' });
-  }
+  // this will, always
+  // if (req.accepts('json')) {
+  //   return res.status(errorStatusCode).json({ error: '404 not found' });
+  // }
 
   // clientError??
   if (req.xhr) {

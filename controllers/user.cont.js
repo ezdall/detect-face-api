@@ -18,7 +18,6 @@ const getUser = async (req, res, next) => {
 };
 
 // GET ALL
-
 const userLists = async (req, res, next) => {
   try {
     const users = await User.find()
@@ -87,6 +86,22 @@ const register = async (req, res, next) => {
   }
 };
 
+const updateUser = async (req, res, next) => {
+  try {
+    const formInput = req.body;
+    const updatedUser = _.extend(req.user, formInput);
+
+    const user = await updatedUser.save();
+
+    user.hashed_password = undefined;
+    user.salt = undefined;
+
+    return res.json(user);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const userById = async (req, res, next) => {
   try {
     const { userId } = req.params;
@@ -117,6 +132,7 @@ module.exports = {
   register,
   // logout,
   getUser,
+  updateUser,
   userLists,
   userById
 };

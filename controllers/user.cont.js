@@ -65,9 +65,8 @@ const signin = async (req, res, next) => {
     // cant do .select(), due to validating password
     user.hashed_password = undefined;
     user.salt = undefined;
-    user.entries = user.history.length;
 
-    return res.json({ token, user });
+    return res.json({ token, user: user.toObject() });
   } catch (error) {
     return next(error);
   }
@@ -91,7 +90,7 @@ const register = async (req, res, next) => {
     user.hashed_password = undefined;
     user.salt = undefined;
 
-    return res.status(201).json(user);
+    return res.status(201).json({ user });
   } catch (error) {
     return next(error);
   }

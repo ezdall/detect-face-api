@@ -1,6 +1,7 @@
 require('express-async-errors');
 const express = require('express');
 const mongoose = require('mongoose');
+const cors = require('cors')
 const path = require('path');
 const dotenv = require('dotenv');
 
@@ -25,6 +26,7 @@ const { userRouter } = require('./routes/user.route');
 
 const { errorHandler } = require('./helpers/error-handler');
 
+app.use(cors())
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

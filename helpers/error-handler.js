@@ -60,7 +60,7 @@ const errorHandler = (error, req, res, next) => {
   }
 
   // jwt-express's authentication error-handling
-  // redundant error.name
+  // redundant error.name??
   if (error.name === 'UnauthorizedError') {
     return res.status(401).json({
       error: `${error.name} : ${error.message}`

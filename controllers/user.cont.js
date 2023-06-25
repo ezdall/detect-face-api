@@ -1,7 +1,10 @@
 const mongoose = require('mongoose');
 const _ = require('lodash');
+const expressJwt = require('express-jwt');
+const jwt = require('jsonwebtoken');
 
 const User = require('../models/user.model');
+const express = require('express');
 
 // GET A
 const getUser = async (req, res, next) => {
@@ -50,13 +53,21 @@ const signin = async (req, res, next) => {
       return next(Error('wrong password'));
     }
 
+    const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, {
+      expiresIn: '1h'
+    });
+
+    // access by express-jwt through cookie
+    // using it secret, to decode
+    res.cookie('t', token);
+
     // remove password-related
     // cant do .select(), due to validating password
     user.hashed_password = undefined;
     user.salt = undefined;
     user.entries = user.history.length;
 
-    return res.json(user);
+    return res.json({ token, user });
   } catch (error) {
     return next(error);
   }
@@ -81,6 +92,17 @@ const register = async (req, res, next) => {
     user.salt = undefined;
 
     return res.status(201).json(user);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const logout = async (req, res, next) => {
+  try {
+    console.log('logout');
+    await res.clearCookie('t');
+
+    return res.json('clear cookie');
   } catch (error) {
     return next(error);
   }
@@ -127,10 +149,20 @@ const userById = async (req, res, next) => {
   }
 };
 
+// checks and decoder of "Bearer xxx" req.headers.authorization
+// access the decoded at: "req.auth"
+// has next()
+const isLogin = expressJwt({
+  secret: process.env.JWT_SECRET,
+  algorithms: ['HS256'],
+  requestProperty: 'auth'
+});
+
 module.exports = {
   signin,
   register,
-  // logout,
+  logout,
+  isLogin,
   getUser,
   updateUser,
   userLists,

@@ -13,9 +13,9 @@ const userSchema = new Schema(
     },
     email: {
       type: String,
-      required: true,
+      required: 'email is required',
+      unique: 'email already exists',
       trim: true,
-      unique: true,
       match: [/.+@.+\..+/, 'Email must contain @'],
       minlength: 4,
       maxlength: 32

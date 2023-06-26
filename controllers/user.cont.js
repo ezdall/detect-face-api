@@ -1,38 +1,10 @@
 const mongoose = require('mongoose');
-const _ = require('lodash');
+const extend = require('lodash/extend');
 const expressJwt = require('express-jwt');
 const jwt = require('jsonwebtoken');
 
 const User = require('../models/user.model');
 const express = require('express');
-
-// GET A
-const getUser = async (req, res, next) => {
-  try {
-    // transfor to plain-js
-    const user = req.user.toObject();
-    user.id = user._id;
-    user.entries = user.history.length;
-
-    return res.json(user);
-  } catch (error) {
-    return next(error);
-  }
-};
-
-// GET ALL
-const userLists = async (req, res, next) => {
-  try {
-    const users = await User.find()
-      .select('-salt -hashed_password')
-      .lean()
-      .exec();
-
-    return res.json(users);
-  } catch (error) {
-    return next(error);
-  }
-};
 
 // transfer to 'auth'
 const signin = async (req, res, next) => {
@@ -107,10 +79,43 @@ const logout = async (req, res, next) => {
   }
 };
 
+
+// GET A
+const getUser = async (req, res, next) => {
+  try {
+    // remove password-related
+    req.user.hashed_password = undefined;
+    req.user.salt = undefined;
+
+    // transfor to plain-js
+    const user = req.user.toObject();
+    user.id = user._id;
+    user.entries = user.history.length;
+
+    return res.json(user);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// GET ALL
+const userLists = async (req, res, next) => {
+  try {
+    const users = await User.find()
+      .select('-salt -hashed_password')
+      .lean()
+      .exec();
+
+    return res.json(users);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const updateUser = async (req, res, next) => {
   try {
     const formInput = req.body;
-    const updatedUser = _.extend(req.user, formInput);
+    const updatedUser = extend(req.user, formInput);
 
     const user = await updatedUser.save();
 
@@ -141,8 +146,10 @@ const userById = async (req, res, next) => {
 
     // mount
     req.user = user;
-
+    
+    // !important
     return next();
+  
   } catch (error) {
     return next(error);
   }

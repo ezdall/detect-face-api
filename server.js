@@ -1,9 +1,10 @@
 require('express-async-errors');
 const express = require('express');
 const mongoose = require('mongoose');
+const dotenv = require('dotenv');
 const cors = require('cors')
 const path = require('path');
-const dotenv = require('dotenv');
+const morgan = require('morgan')
 
 const { connectMDB } = require('./db');
 
@@ -27,6 +28,7 @@ const { userRouter } = require('./routes/user.route');
 const { errorHandler } = require('./helpers/error-handler');
 
 app.use(cors())
+app.use(morgan('dev'))
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

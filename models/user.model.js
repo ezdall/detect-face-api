@@ -25,6 +25,7 @@ const userSchema = new Schema(
       default: 0
     },
     history: {
+      // this must be entries
       type: Array,
       default: []
     },

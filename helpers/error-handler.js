@@ -74,11 +74,11 @@ const errorHandler = (error, req, res, next) => {
   // }
 
   // NotFound Error
-  if (errorStatusCode === 404 && req.accepts('html')) {
-    return res
-      .status(errorStatusCode)
-      .sendFile(path.join(__dirname, '..', 'views', '404.html'));
-  }
+  // if (errorStatusCode === 404 && req.accepts('html')) {
+  //   return res
+  //     .status(errorStatusCode)
+  //     .sendFile(path.join(__dirname, '..', 'views', '404.html'));
+  // }
 
   // this will, always
   // if (req.accepts('json')) {

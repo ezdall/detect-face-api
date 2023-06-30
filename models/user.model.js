@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { genSaltSync, hashSync, compareSync } = require('bcrypt');
+// const { genSaltSync, hashSync, compareSync, genSalt, hash, compare } = require('bcrypt');
 
 const { Schema, model } = mongoose;
 
@@ -46,11 +46,21 @@ const userSchema = new Schema(
 /**
  *  pre save
  */
-// cannot be use 'if required"
-// userSchema.pre('save', function(next) {
-//  // eslint-disable-next-line
-//   this.name = this.email.split('@')[0];
-//   next();
+
+// hard to detect error for async
+// need to transfer, password-handling at auth.cont.js
+// for good error handling
+// userSchema.pre('save', async function(next) {
+//   try{
+//     this.salt = genSalt();
+//     this.hashed_password = hash(this._password, this.salt)
+
+//     return next();
+//   } catch (error){
+//     return next(error)
+//   }
+
+  
 // });
 
 /**
@@ -61,13 +71,12 @@ const userSchema = new Schema(
  * Virtuals
  */
 
+// "require" will trigger here
+
 userSchema
   .virtual('password')
   .set(function passVirtSet(password) {
     this._password = password;
-    this.salt = genSaltSync();
-
-    this.hashed_password = hashSync(password, this.salt);
   })
   .get(function passVirtGet() {
     return this._password;
@@ -78,7 +87,8 @@ userSchema
  */
 
 // validate this._password (virtual)
-userSchema.path('hashed_password').validate(function hashPassPathValidate(val) {
+// 'hashed_password'
+userSchema.path('salt').validate(function hashPassPathValidate(val) {
   // min of 5 char
   if (this._password && this._password.length < 5) {
     // invalidates the incoming 'password'
@@ -90,7 +100,7 @@ userSchema.path('hashed_password').validate(function hashPassPathValidate(val) {
   // dealing w/ new register/signup w/ empty password
   if (this.isNew && !this._password) {
     // invalidates the incoming 'password'
-    this.invalidate('password', 'Password is required!');
+    this.invalidate('password', 'ppPassword is required!');
   }
 }, null);
 
@@ -98,12 +108,14 @@ userSchema.path('hashed_password').validate(function hashPassPathValidate(val) {
  * Paths
  */
 
-userSchema.methods = {
-  validatePassword(passwordGiven) {
-    // encrypting password is one-way
-    // we only compare the hash_password and the encrypted password-given
-    return compareSync(passwordGiven, this.hashed_password);
-  }
-};
+// userSchema.methods = {
+//   validatePassword(passwordGiven) {
+//     // encrypting password is one-way
+//     // we only compare the hash_password and the encrypted password-given
+
+//     // compare is async
+//     return compare(passwordGiven, this.hashed_password);
+//   }
+// };
 
 module.exports = model('user', userSchema);

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { genSalt, hash, compare } = require('bcrypt')
 const expressJwt = require('express-jwt');
 const jwt = require('jsonwebtoken');
 
@@ -18,7 +19,11 @@ const signin = async (req, res, next) => {
       return next(Error('unauthorized'));
     }
 
-    if (!user.validatePassword(password)) {
+    // need to await, must be boolean
+    // const pwdMatch = await user.validatePassword(password)
+    const pwdMatch = await compare(password, user.hashed_password)
+
+    if (typeof pwdMatch !== 'boolean' || !pwdMatch) {
       return next(Error('wrong password'));
     }
 
@@ -48,7 +53,11 @@ const register = async (req, res, next) => {
       return next(Error('all fields required'));
     }
 
-    const user = await User.create({ email, password, name });
+    // password encrypt
+    const salt = await genSalt();
+    const hashed_password = await hash(password, salt)
+
+    const user = await User.create({ email, password, name, salt, hashed_password });
 
     if (!user) {
       return next(Error('invalid user'));

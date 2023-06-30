@@ -10,13 +10,16 @@ const signin = async (req, res, next) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return next(Error('all field required'));
+      return next(Error('all field required /signin'));
     }
 
     const user = await User.findOne({ email }).exec();
 
+    console.log(user)
+
+
     if (!user) {
-      return next(Error('unauthorized'));
+      return next(Error('Unauthorized /signin'));
     }
 
     // need to await, must be boolean
@@ -24,7 +27,7 @@ const signin = async (req, res, next) => {
     const pwdMatch = await compare(password, user.hashed_password)
 
     if (typeof pwdMatch !== 'boolean' || !pwdMatch) {
-      return next(Error('wrong password'));
+      return next(Error('wrong password /signin'));
     }
 
     const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, {

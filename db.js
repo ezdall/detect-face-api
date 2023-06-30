@@ -2,7 +2,8 @@ const mongoose = require('mongoose');
 
 const connectMDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI_FACE, {
+    // MONGO_URI_FACE , MONGO_URI_FACE_R
+    const conn = await mongoose.connect(process.env.MONGO_URI_FACE_R, {
       useNewUrlParser: true,
       useCreateIndex: true,
       useUnifiedTopology: true,

@@ -7,6 +7,25 @@ const User = require('../models/user.model');
 
 const signin = async (req, res, next) => {
   try {
+
+    const { authorization } = req.headers
+
+    if(authorization){
+
+    const decoded = jwt.verify(
+      authorization.replace('Bearer ', ''),
+      process.env.JWT_SECRET
+      )
+
+    // toObject vs lean()
+    const user = await User.findOne({ email: decoded.email }).lean().exec()
+
+    user.hashed_password = undefined;
+    user.salt = undefined;
+  
+    return res.json({ user });
+    }  
+    
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -14,9 +33,6 @@ const signin = async (req, res, next) => {
     }
 
     const user = await User.findOne({ email }).exec();
-
-    console.log(user)
-
 
     if (!user) {
       return next(Error('Unauthorized /signin'));
@@ -113,8 +129,11 @@ const userById = async (req, res, next) => {
 };
 
 // checks and decoder of "Bearer xxx" req.headers.authorization
+// then mount data to req.auth
 const isLogin = expressJwt({
   secret: process.env.JWT_SECRET,
+  // audience:'http://',
+  // issuer: 'http://',
   algorithms: ['HS256'],
   requestProperty: 'auth'
 });

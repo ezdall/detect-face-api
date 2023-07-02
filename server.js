@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const cors = require('cors')
 const path = require('path');
 const morgan = require('morgan')
+const cookieParser = require('cookie-parser')
 
 const { connectMDB } = require('./db');
 
@@ -31,6 +32,7 @@ app.use(cors())
 app.use(morgan('dev'))
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+// app.use(cookieParser())
 
 app.use('/dist', express.static(path.join(__dirname, 'public')));
 

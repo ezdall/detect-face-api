@@ -8,6 +8,7 @@ const morgan = require('morgan')
 const cookieParser = require('cookie-parser')
 
 const { connectMDB } = require('./db');
+const { corsOptions } = require('./helpers/cors-opts');
 
 // env, configs
 dotenv.config({
@@ -28,11 +29,11 @@ const { userRouter } = require('./routes/user.route');
 
 const { errorHandler } = require('./helpers/error-handler');
 
-app.use(cors())
+app.use(cors(corsOptions))
 app.use(morgan('dev'))
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-// app.use(cookieParser())
+app.use(cookieParser())
 
 app.use('/dist', express.static(path.join(__dirname, 'public')));
 

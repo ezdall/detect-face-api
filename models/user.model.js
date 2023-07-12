@@ -15,14 +15,14 @@ const userSchema = new Schema(
       type: String,
       required: 'email is required',
       unique: 'email already exists',
-      trim: true,
       match: [/.+@.+\..+/, 'Email must contain @'],
+      trim: true,
       minlength: 4,
       maxlength: 32
     },
     role: {
-      type: Number,
-      default: 0
+      type: Array,
+      // default: ['user']
     },
     history: {
       // this must be entries
@@ -35,7 +35,8 @@ const userSchema = new Schema(
     },
     salt: {
       type: String
-    }
+    },
+    refresh_token: String
   },
   {
     timestamps: true,

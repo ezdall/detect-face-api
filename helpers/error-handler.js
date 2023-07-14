@@ -1,44 +1,6 @@
 const mongoose = require('mongoose');
-const path = require('path');
+// const path = require('path');
 
-const getUniqueErrorMessage = err => {
-  let output = '';
-
-  try {
-    const fieldName = err.message.substring(
-      err.message.lastIndexOf('.$') + 2,
-      err.message.lastIndexOf('_1')
-    );
-    output = `${fieldName.charAt(0).toUpperCase()}${fieldName.slice(
-      1
-    )} already exists`;
-  } catch (ex) {
-    output = 'Unique field already exists';
-  }
-
-  return output;
-};
-
-const getErrorMessage = err => {
-  let message = '';
-
-  if (err.code) {
-    switch (err.code) {
-      case 11000:
-      case 11001:
-        message = getUniqueErrorMessage(err);
-        break;
-      default:
-        message = 'Something went wrong';
-    }
-  } else {
-    // eslint-disable-next-line
-    for (const errName in err.errors) {
-      if (err.errors[errName].message) message = err.errors[errName].message;
-    }
-  }
-  return message;
-};
 
 // main errorHandler
 const errorHandler = (error, req, res, next) => {
@@ -51,6 +13,7 @@ const errorHandler = (error, req, res, next) => {
   }
 
   console.error('| ==--- MyErrorStack ---== |:', error.stack);
+  // console.log({error})
 
   // sent to default express errorHandler
   // can trigger if two res. ex. res.render() and res.json()
@@ -65,6 +28,26 @@ const errorHandler = (error, req, res, next) => {
     return res.status(401).json({
       error: `${error.name} : ${error.message}`
     });
+  }
+
+  if(error.statusCode === 400){
+    return res.status(400).json({
+      error: `${error.name} : ${error.message}`
+    })
+  }
+
+   if(error.statusCode === 401){
+    return res.status(401).json({
+      error: `${error.name} : ${error.message}`
+    })
+  }
+
+  // mongoose Error, duplicate
+  if(error.name === 'MongoError' && error.code === (11000 || 11001)){
+    const uniqueVal = Object.values(error.keyValue)
+
+    // console.log(getUniqueErrorMessage(error))
+    return res.status(409).json({ error: `${uniqueVal} already exist`})
   }
 
   // if (errorStatusCode === 301) {
@@ -98,4 +81,4 @@ const errorHandler = (error, req, res, next) => {
   });
 };
 
-module.exports = { getErrorMessage, errorHandler };
+module.exports = { errorHandler };

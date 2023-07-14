@@ -4,11 +4,14 @@ const expressJwt = require('express-jwt');
 const jwt = require('jsonwebtoken');
 
 const User = require('../models/user.model');
+const { NotFoundError } = require('../helpers/error-status')
 
 const signin = async (req, res, next) => {
   try {
 
-    const { authorization } = req.headers
+  const authorization = req.headers['authorization'] ||  req.headers['Authorization']
+
+  console.log('auth:', authorization)
 
     if(authorization){
 
@@ -20,6 +23,8 @@ const signin = async (req, res, next) => {
     // toObject vs lean()
     const user = await User.findOne({ email: decoded.email }).lean().exec()
 
+    console.log('user using auth', user)
+
     user.hashed_password = undefined;
     user.salt = undefined;
   
@@ -29,13 +34,21 @@ const signin = async (req, res, next) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return next(Error('all field required /signin'));
+      const err = Error('all field required /signin');
+
+      err.statusCode = 400
+      return next(err);
     }
 
     const user = await User.findOne({ email }).exec();
 
+     // console.log(user)
+
     if (!user) {
-      return next(Error('Unauthorized /signin'));
+      const err = Error('No such user /signin');
+      err.statusCode = 401;
+
+      return next(err);
     }
 
     // need to await, must be boolean
@@ -43,16 +56,33 @@ const signin = async (req, res, next) => {
     const pwdMatch = await compare(password, user.hashed_password)
 
     if (typeof pwdMatch !== 'boolean' || !pwdMatch) {
-      return next(Error('wrong password /signin'));
+      const err = Error('wrong password /signin');
+      err.statusCode = 401;
+
+      return next(err);
     }
 
-    const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ email: user.email, role:user.role }, process.env.JWT_SECRET, {
       expiresIn: '1hr'
     });
 
+    const refreshToken = jwt.sign({ email: user.email }, process.env.REFRESH_SECRET, {
+      expiresIn: '1d'
+    })
+
+    user.refresh_token = refreshToken;
+    const result = await user.save();
+
+    console.log('user at token')
+
+    if(!result){
+      return next(Error('error saving token'))
+    }
+
     // access by express-jwt through cookie
     // using it secret, to decode
-    res.cookie('t', token);
+    res.cookie('jwt', refreshToken);
+
 
     // remove password-related
     user.hashed_password = undefined;
@@ -60,6 +90,7 @@ const signin = async (req, res, next) => {
 
     return res.json({ token, user: user.toObject() });
   } catch (error) {
+    error.statusCode(401);
     return next(error);
   }
 };
@@ -91,6 +122,55 @@ const register = async (req, res, next) => {
     return next(error);
   }
 };
+
+const refresh = async (req, res, next) => {
+  try{
+    // required cookieParser
+    const { cookies } = req
+
+    console.log('cookies:', cookies)
+
+    if(!cookies.jwt) return res.sendStatus(401);
+    const refreshToken = cookies.jwt
+
+    // console.log(token)
+    const user = await User.findOne({ refresh_token: refreshToken }).lean().exec()
+
+    console.log('user',user)
+
+    if(!user){
+      return res.sendStatus(403); // Forbidden
+    }
+
+    jwt.verify(
+      refreshToken,
+      process.env.REFRESH_SECRET,
+      (err, decoded) => {
+        console.log('inside')
+        if(err || user.email !== decoded.email) {
+          console.log(err)
+          console.log('user', user.email)
+          console.log('decod', decoded)
+          return res.sendStatus(403);
+        } // forbidden
+
+        const token = jwt.sign({ email: user.email, role:user.role }, process.env.JWT_SECRET, {
+          expiresIn: '1hr'
+         });
+
+         // strip
+        user.hashed_password = undefined;
+        user.salt = undefined;
+
+        return res.json({ token, user });
+      }
+      )
+
+    // return res.json('refresh')
+  } catch(error){
+    return next(error)
+  }
+}
 
 const logout = async (req, res, next) => {
   try {
@@ -157,6 +237,7 @@ const isAuth = (req, res, next) => {
 module.exports = {
   signin,
   register,
+  refresh,
   logout,
   isLogin,
   isAuth,

@@ -3,15 +3,16 @@ const router = require('express').Router();
 const {
   register,
   signin,
-  isLogin,
+  refresh,
   logout,
   userById,
+  isLogin,
   isAuth
 } = require('../controllers/auth.cont');
 
 const { userLists, getUser, updateUser } = require('../controllers/user.cont');
 
-const { handleImage } = require('../controllers/image.cont');
+const { handleImage, requestApi } = require('../controllers/image.cont');
 
 // testing
 router.get('/hi/:userId', isLogin, isAuth, (req, res) => {
@@ -21,18 +22,23 @@ router.get('/hi/:userId', isLogin, isAuth, (req, res) => {
   return res.json('hi');
 });
 
+//
+router.get('/users', userLists);
+
 // auth
 router.post('/signin', signin);
 router.post('/register', register);
+
+router.get('/refresh', refresh);
 router.get('/logout', logout);
+
 // img, clarifai
-// router.post('/image-url', isLogin, requestApi);
+router.post('/image-url', isLogin, requestApi);
 router.patch('/image', handleImage);
+
 // profile
 router.get('/profile/:userId', isLogin, isAuth, getUser);
 router.put('/profile/:userId', isLogin, isAuth, updateUser);
-// test
-router.get('/users', isLogin, userLists);
 
 router.param('userId', userById);
 

@@ -28,6 +28,10 @@ const userLists = async (req, res, next) => {
       .lean()
       .exec();
 
+    if(!users?.length){
+      return next(Error('no user lists @userLists'))
+    }
+
     return res.json(users);
   } catch (error) {
     return next(error);

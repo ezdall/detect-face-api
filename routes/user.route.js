@@ -12,7 +12,7 @@ const {
 
 const { userLists, getUser, updateUser } = require('../controllers/user.cont');
 
-const { handleImage, requestApi } = require('../controllers/image.cont');
+const { handleImage, requestApi2 } = require('../controllers/image.cont');
 
 // testing
 router.get('/hi/:userId', isLogin, isAuth, (req, res) => {
@@ -33,7 +33,7 @@ router.get('/refresh', refresh);
 router.get('/logout', logout);
 
 // img, clarifai
-router.post('/image-url', isLogin, requestApi);
+router.post('/image-url', isLogin, requestApi2);
 router.patch('/image', handleImage);
 
 // profile

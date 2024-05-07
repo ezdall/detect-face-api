@@ -53,8 +53,8 @@ const userSchema = new Schema(
 // for good error handling
 // userSchema.pre('save', async function(next) {
 //   try{
-//     this.salt = genSalt();
-//     this.hashed_password = hash(this._password, this.salt)
+//     this.salt = await genSalt();
+//     this.hashed_password = await hash(this._password, this.salt)
 
 //     return next();
 //   } catch (error){

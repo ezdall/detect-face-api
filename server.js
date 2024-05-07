@@ -1,19 +1,15 @@
 require('express-async-errors');
+require('dotenv').config();
+
 const express = require('express');
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const cors = require('cors')
+const cors = require('cors');
 const path = require('path');
-const morgan = require('morgan')
-const cookieParser = require('cookie-parser')
+const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
 
 const { connectMDB } = require('./db');
 const { corsOptions } = require('./helpers/cors-opts');
-
-// env, configs
-dotenv.config({
-  path: './config/config.env'
-});
 
 // connect
 connectMDB().catch(error =>
@@ -29,11 +25,11 @@ const { userRouter } = require('./routes/user.route');
 
 const { errorHandler } = require('./helpers/error-handler');
 
-app.use(cors(corsOptions))
-app.use(morgan('dev'))
+app.use(cors(corsOptions));
+app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser())
+app.use(cookieParser());
 
 app.use('/dist', express.static(path.join(__dirname, 'public')));
 

@@ -1,48 +1,46 @@
 const mongoose = require('mongoose');
-const { genSalt, hash, compare } = require('bcrypt')
+const { genSalt, hash, compare } = require('bcrypt');
 const expressJwt = require('express-jwt');
 const jwt = require('jsonwebtoken');
 
 const User = require('../models/user.model');
-const { NotFoundError } = require('../helpers/error-status')
+const { NotFoundError } = require('../helpers/error-status');
+const { isTokenExpired } = require('../helpers/is-token-expired');
 
 const signin = async (req, res, next) => {
   try {
+    const authorization =
+      req.headers['authorization'] || req.headers['Authorization'];
+    const currToken = authorization && authorization.replace('Bearer ', '');
 
-  const authorization = req.headers['authorization'] ||  req.headers['Authorization']
+    console.log('auth:', authorization);
 
-  console.log('auth:', authorization)
+    if (currToken && !isTokenExpired(currToken)) {
+      const decoded = jwt.verify(currToken, process.env.JWT_SECRET);
 
-    if(authorization){
+      // toObject vs lean()
+      const user = await User.findOne({ email: decoded.email }).lean().exec();
 
-    const decoded = jwt.verify(
-      authorization.replace('Bearer ', ''),
-      process.env.JWT_SECRET
-      )
+      console.log('user using auth', user);
 
-    // toObject vs lean()
-    const user = await User.findOne({ email: decoded.email }).lean().exec()
+      user.hashed_password = undefined;
+      user.salt = undefined;
 
-    console.log('user using auth', user)
+      return res.json({ user });
+    }
 
-    user.hashed_password = undefined;
-    user.salt = undefined;
-  
-    return res.json({ user });
-    }  
-    
     const { email, password } = req.body;
 
     if (!email || !password) {
       const err = Error('all field required /signin');
 
-      err.statusCode = 400
+      err.statusCode = 400;
       return next(err);
     }
 
     const user = await User.findOne({ email }).exec();
 
-     // console.log(user)
+    // console.log(user)
 
     if (!user) {
       const err = Error('No such user /signin');
@@ -52,8 +50,7 @@ const signin = async (req, res, next) => {
     }
 
     // need to await, must be boolean
-    // const pwdMatch = await user.validatePassword(password)
-    const pwdMatch = await compare(password, user.hashed_password)
+    const pwdMatch = await compare(password, user.hashed_password);
 
     if (typeof pwdMatch !== 'boolean' || !pwdMatch) {
       const err = Error('wrong password /signin');
@@ -62,27 +59,37 @@ const signin = async (req, res, next) => {
       return next(err);
     }
 
-    const token = jwt.sign({ email: user.email, role:user.role }, process.env.JWT_SECRET, {
-      expiresIn: '1hr'
-    });
+    const token = jwt.sign(
+      { email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: '1hr'
+      }
+    );
 
-    const refreshToken = jwt.sign({ email: user.email }, process.env.REFRESH_SECRET, {
-      expiresIn: '1d'
-    })
+    const refreshToken = jwt.sign(
+      { email: user.email },
+      process.env.REFRESH_SECRET,
+      {
+        expiresIn: '7d' // same to res.cookie
+      }
+    );
 
     user.refresh_token = refreshToken;
     const result = await user.save();
 
-    console.log('user at token')
+    console.log('user at token');
 
-    if(!result){
-      return next(Error('error saving token'))
+    if (!result) {
+      return next(Error('error saving token'));
     }
 
     // access by express-jwt through cookie
     // using it secret, to decode
-    res.cookie('jwt', refreshToken);
-
+    // frontend must have 'credentials'
+    res.cookie('jwt', refreshToken, {
+      maxAge: 7 * 24 * 60 * 60 * 1000 // same to refreshToken
+    });
 
     // remove password-related
     user.hashed_password = undefined;
@@ -90,7 +97,7 @@ const signin = async (req, res, next) => {
 
     return res.json({ token, user: user.toObject() });
   } catch (error) {
-    error.statusCode(401);
+    // error.statusCode(401);
     return next(error);
   }
 };
@@ -105,9 +112,15 @@ const register = async (req, res, next) => {
 
     // password encrypt
     const salt = await genSalt();
-    const hashed_password = await hash(password, salt)
+    const hashed_password = await hash(password, salt);
 
-    const user = await User.create({ email, password, name, salt, hashed_password });
+    const user = await User.create({
+      email,
+      password,
+      name,
+      salt,
+      hashed_password
+    });
 
     if (!user) {
       return next(Error('invalid user'));
@@ -124,53 +137,55 @@ const register = async (req, res, next) => {
 };
 
 const refresh = async (req, res, next) => {
-  try{
+  try {
     // required cookieParser
-    const { cookies } = req
+    const { cookies } = req;
 
-    console.log('cookies:', cookies)
+    console.log('cookies:', cookies);
 
-    if(!cookies.jwt) return res.sendStatus(401);
-    const refreshToken = cookies.jwt
+    if (!cookies.jwt) return res.sendStatus(401);
+    const refreshToken = cookies.jwt;
 
     // console.log(token)
-    const user = await User.findOne({ refresh_token: refreshToken }).lean().exec()
+    const user = await User.findOne({ refresh_token: refreshToken })
+      .lean()
+      .exec();
 
-    console.log('user',user)
+    console.log('user', user);
 
-    if(!user){
+    if (!user) {
       return res.sendStatus(403); // Forbidden
     }
 
-    jwt.verify(
-      refreshToken,
-      process.env.REFRESH_SECRET,
-      (err, decoded) => {
-        console.log('inside')
-        if(err || user.email !== decoded.email) {
-          console.log(err)
-          console.log('user', user.email)
-          console.log('decod', decoded)
-          return res.sendStatus(403);
-        } // forbidden
+    jwt.verify(refreshToken, process.env.REFRESH_SECRET, (err, decoded) => {
+      console.log('inside');
+      if (err || user.email !== decoded.email) {
+        console.log(err);
+        console.log('user', user.email);
+        console.log('decod', decoded);
+        return res.sendStatus(403);
+      } // forbidden
 
-        const token = jwt.sign({ email: user.email, role:user.role }, process.env.JWT_SECRET, {
+      const token = jwt.sign(
+        { email: user.email, role: user.role },
+        process.env.JWT_SECRET,
+        {
           expiresIn: '1hr'
-         });
+        }
+      );
 
-         // strip
-        user.hashed_password = undefined;
-        user.salt = undefined;
+      // strip
+      user.hashed_password = undefined;
+      user.salt = undefined;
 
-        return res.json({ token, user });
-      }
-      )
+      return res.json({ token, user });
+    });
 
     // return res.json('refresh')
-  } catch(error){
-    return next(error)
+  } catch (error) {
+    return next(error);
   }
-}
+};
 
 const logout = async (req, res, next) => {
   try {

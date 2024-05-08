@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 const morgan = require('morgan');
+const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 
 const { connectMDB } = require('./db');
@@ -30,6 +31,7 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+// app.use(helmet());
 
 app.use('/dist', express.static(path.join(__dirname, 'public')));
 
@@ -46,6 +48,7 @@ app.use(errorHandler);
 //
 mongoose.connection.once('open', () => {
   app.listen(PORT, err => {
+    if (err) throw err;
     console.log(`Face-Detect Server is running on http://localhost:${PORT}`);
   });
 });

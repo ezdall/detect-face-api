@@ -1,36 +1,41 @@
 {
   "name": "face-detect-api-mdb",
-  "version": "0.1.0",
+  "version": "1.0",
+  "description": "api for face-detect",
   "main": "server.js",
   "dependencies": {
-    "bcrypt": "5.0.1",
-    "clarifai": "2.9.1",
-    "connect-mongo": "3.2.0",
+    "bcrypt": "5.1.1",
+    "clarifai-nodejs-grpc": "10.2.1",
+    "connect-mongo": "5.1.0",
+    "cookie-parser": "1.4.6",
     "cors": "2.8.5",
-    "dotenv": "8.2.0",
-    "express": "4.17.1",
+    "dotenv": "8.6.0",
+    "express": "4.19.2",
     "express-async-errors": "3.1.1",
-    "express-jwt": "6.0.0",
-    "express-session": "1.17.1",
-    "helmet": "3.22.0",
+    "express-jwt": "6.1.2",
+    "express-session": "1.17.3",
+    "helmet": "7.1.0",
     "jsonwebtoken": "8.5.1",
     "lodash": "4.17.21",
-    "mongoose": "5.12.5",
-    "morgan": "1.10.0",
-    "uuid": "3.3.3"
+    "mongoose": "5.13.22",
+    "morgan": "1.10.0"
   },
   "devDependencies": {
-    "nodemon": "2.0.20"
+    "eslint": "7.32.0",
+    "eslint-config-airbnb-base": "15.0.0",
+    "eslint-config-prettier": "8.5.0",
+    "eslint-plugin-import": "2.25.2",
+    "eslint-plugin-prettier": "4.2.1",
+    "nodemon": "2.0.22",
+    "prettier": "2.5.1"
   },
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
   "engines": {
-    "node": "14.20.1"
+    "node": "16.20.2"
   },
   "keywords": [],
-  "author": "itachi0",
-  "license": "MIT",
-  "description": "detect face, mern stack"
+  "license": "MIT"
 }

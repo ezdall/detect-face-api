@@ -10,10 +10,10 @@ const { isTokenExpired } = require('../helpers/is-token-expired');
 const signin = async (req, res, next) => {
   try {
     const authorization =
-      req.headers['authorization'] || req.headers['Authorization'];
+      req.headers.authorization || req.headers.Authorization;
     const currToken = authorization && authorization.replace('Bearer ', '');
 
-    console.log('auth:', authorization);
+    // console.log('auth:', authorization)
 
     if (currToken && !isTokenExpired(currToken)) {
       const decoded = jwt.verify(currToken, process.env.JWT_SECRET);
@@ -21,7 +21,7 @@ const signin = async (req, res, next) => {
       // toObject vs lean()
       const user = await User.findOne({ email: decoded.email }).lean().exec();
 
-      console.log('user using auth', user);
+      console.log('user using old-token:', user.email);
 
       user.hashed_password = undefined;
       user.salt = undefined;
@@ -112,14 +112,14 @@ const register = async (req, res, next) => {
 
     // password encrypt
     const salt = await genSalt();
-    const hashed_password = await hash(password, salt);
+    const hashedPassword = await hash(password, salt);
 
     const user = await User.create({
       email,
       password,
       name,
       salt,
-      hashed_password
+      hashed_password: hashedPassword
     });
 
     if (!user) {
@@ -237,6 +237,7 @@ const isLogin = expressJwt({
 // place at route with /:userId
 const isAuth = (req, res, next) => {
   try {
+    // console.log({reqUser: req.user, reqAuth: req.auth })
     const authorized = req.user && req.auth && req.user.email == req.auth.email;
 
     if (!authorized) {

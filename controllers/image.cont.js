@@ -60,30 +60,37 @@ const requestApi2 = async (req, res, next) => {
 const requestApi = async (req, res, next) => {
   try {
     const { body } = req;
-    const data = await clarifaiApp.models.predict(
-      // clarifai.FACE_DETECT_MODEL,
-      // clarifai.DEMOGRAPHICS_MODEL,
-      // 'aaa03c23b3724a16a56b629203edc62c',
-      { id: 'aa7f35c01e0642fda5cf400f543e7c40' },
-      req.body.input
-    );
 
-    if (!data) {
-      return next(Error('no clarifai data'));
-    }
+    // const data = await clarifaiApp.models.predict(
+    // clarifai.FACE_DETECT_MODEL,
+    // clarifai.DEMOGRAPHICS_MODEL,
+    // id: 'aa7f35c01e0642fda5cf400f543e7c40'
+    // 'aaa03c23b3724a16a56b629203edc62c',
+    // a403429f2ddf4b49b307e318f00e528b
 
-    const user = await User.findOne({ email: 'joejoe@gmail.com' })
-      .select('history')
-      .exec();
+    //   {
+    //     id: 'a403429f2ddf4b49b307e318f00e528b',
+    //     version: '34ce21a40cc24b6b96ffee54aabff139'
+    //   },
+    //   req.body.input
+    // );
 
-    if (!user) {
-      return next(Error('no user'));
-    }
+    // if (!data) {
+    //   return next(Error('no clarifai data'));
+    // }
 
-    user.history.push(body.input);
-    await user.save();
+    // const user = await User.findOne({ email: 'joejoe@gmail.com' })
+    //   .select('history')
+    //   .exec();
 
-    return res.json(data);
+    // if (!user) {
+    //   return next(Error('no user'));
+    // }
+
+    // user.history.push(body.input);
+    // await user.save();
+
+    // return res.json(data);
   } catch (error) {
     console.log(error.toString());
     return next(error);

@@ -21,7 +21,7 @@ const userSchema = new Schema(
       maxlength: 32
     },
     role: {
-      type: Array,
+      type: Array
       // default: ['user']
     },
     history: {
@@ -61,7 +61,6 @@ const userSchema = new Schema(
 //     return next(error)
 //   }
 
-  
 // });
 
 /**
@@ -94,7 +93,7 @@ userSchema.path('salt').validate(function hashPassPathValidate(val) {
   if (this._password && this._password.length < 5) {
     // invalidates the incoming 'password'
     // Document#invalidate(<path>, <errorMsg>)
-    this.invalidate('password', 'Password must be at least 6 chars');
+    this.invalidate('password', 'Password must be at least 5 chars');
   }
 
   // Document#isNew (return boolean)

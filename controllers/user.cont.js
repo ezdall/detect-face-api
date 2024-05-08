@@ -1,4 +1,4 @@
-const extend = require('lodash/extend');
+const _extend = require('lodash/extend');
 
 const User = require('../models/user.model');
 
@@ -28,8 +28,8 @@ const userLists = async (req, res, next) => {
       .lean()
       .exec();
 
-    if(!users?.length){
-      return next(Error('no user lists @userLists'))
+    if (!users) {
+      return next(Error('no user lists @userLists'));
     }
 
     return res.json(users);
@@ -41,7 +41,7 @@ const userLists = async (req, res, next) => {
 const updateUser = async (req, res, next) => {
   try {
     const formInput = req.body;
-    const updatedUser = extend(req.user, formInput);
+    const updatedUser = _extend(req.user, formInput);
 
     const user = await updatedUser.save();
 

@@ -47,9 +47,16 @@ app.use(errorHandler);
 
 //
 mongoose.connection.once('open', () => {
+  const isProd = process.env.NODE_ENV === 'production';
+
+  const nodeEnv = isProd ? 'PROD' : 'DEV';
+  const hostNamePort = isProd
+    ? 'detect-face-srv.onrender.com'
+    : `localhost:${PORT}`;
+
   app.listen(PORT, err => {
     if (err) throw err;
-    console.log(`Face-Detect Server is running on http://localhost:${PORT}`);
+    console.log(`DetectFace-Srv -${nodeEnv}- running at ${hostNamePort}`);
   });
 });
 

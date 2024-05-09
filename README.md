@@ -6,14 +6,14 @@
 - express - nodejs framework
 - mongodb 4.2 (NoSQL) + mongoose
 
-  <br/><br/>
+  <br/>
 
 - cookie-parser - handling refresh-token (cookie)
 - jsonwebtoken + express-jwt - generate/decode access & refresh token
 - bcrypt - generate hashed password
 - clarifai-nodejs
 
-  <br/><br/>
+  <br/>
 
 - dotenv - access .env
 - morgan (dev) - logger for http request, errors

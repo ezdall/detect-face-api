@@ -19,7 +19,7 @@ connectMDB().catch(error =>
 
 const app = express();
 
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = process.env.PORT || 3000;
 
 // import routes
 const { userRouter } = require('./routes/user.route');

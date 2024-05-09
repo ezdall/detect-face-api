@@ -3,6 +3,9 @@ const allowedOrigins = [
   'http://localhost:5000', // react
   'http://localhost:5173', // vite react
 
+  // remote
+  'https://detect-faces-app.onrender.com',
+
   // no internet
   'null'
 ];

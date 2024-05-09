@@ -34,7 +34,7 @@ router.get('/logout', logout);
 
 // img, clarifai
 router.post('/image-url', isLogin, requestApi2);
-router.patch('/image', handleImage);
+router.patch('/image', isLogin, handleImage);
 
 // profile
 router.get('/profile/:userId', isLogin, isAuth, getUser);

@@ -6,30 +6,26 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 const morgan = require('morgan');
-const helmet = require('helmet');
+// const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 
 const { connectMDB } = require('./db');
 const { corsOptions } = require('./helpers/cors-opts');
+const { errorHandler } = require('./helpers/error-handler');
+//
+const { userRouter } = require('./routes/user.route');
 
 // connect
-connectMDB().catch(error =>
-  console.error('connect-mongodb Error', error.stack)
-);
+connectMDB().catch(err => console.error('connect-mongodb Error', err.stack));
 
 const app = express();
 
 const PORT = process.env.PORT || 3000;
 
-// import routes
-const { userRouter } = require('./routes/user.route');
-
-const { errorHandler } = require('./helpers/error-handler');
-
 app.use(cors(corsOptions));
 app.use(morgan('dev'));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true })); // false
 app.use(cookieParser());
 // app.use(helmet());
 
@@ -39,10 +35,12 @@ app.use('/', [userRouter]);
 
 // catch all
 app.all('*', (req, res, next) => {
-  return next();
+  const error = new Error(`${req.ip} tried to access ${req.originalUrl}`);
+
+  return next(error);
 });
 
-// error handling
+// error handle
 app.use(errorHandler);
 
 //

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
-const connectMDB = async () => {
+// to connect
+async function connectMDB() {
   const { MONGO_URI_FACE_PROD, MONGO_URI_FACE_DEV, NODE_ENV } = process.env;
 
   const mongoUri =
@@ -15,15 +16,22 @@ const connectMDB = async () => {
     });
 
     const { name, host, port } = conn.connection;
-    console.log('node_env: ', process.env.NODE_ENV);
-    console.log(
-      `MongoDB Connected: ${host}:${port}/${name} pid:${process.pid}`
-    );
+
+    if (NODE_ENV !== 'test') {
+      console.log(
+        `MongoDB Connected: ${host}:${port}/${name} pid:${process.pid}`
+      );
+    }
   } catch (error) {
     console.error('Error-at-Connection:');
     console.error(error);
     process.exit(0); // exit 0-to clean exit, 1- app crash
   }
-};
+}
 
-module.exports = { connectMDB };
+// to disconnect
+async function mongoDisconnect() {
+  await mongoose.disconnect();
+}
+
+module.exports = { connectMDB, mongoDisconnect };

@@ -4,7 +4,11 @@ const expressJwt = require('express-jwt');
 const jwt = require('jsonwebtoken');
 
 const User = require('../models/user.model');
-const { NotFoundError } = require('../helpers/error-status');
+//
+const { BadRequest400 } = require('../helpers/bad-request.error');
+const { Unauthorized401 } = require('../helpers/unauthorized.error');
+const { NotFound404 } = require('../helpers/not-found.error');
+const { Forbidden403 } = require('../helpers/forbidden.error');
 const { isTokenExpired } = require('../helpers/is-token-expired');
 
 const signin = async (req, res, next) => {
@@ -32,10 +36,7 @@ const signin = async (req, res, next) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      const err = Error('all field required /signin');
-
-      err.statusCode = 400;
-      return next(err);
+      return next(new BadRequest400('all field required /signin'));
     }
 
     const user = await User.findOne({ email }).exec();
@@ -43,20 +44,15 @@ const signin = async (req, res, next) => {
     // console.log(user)
 
     if (!user) {
-      const err = Error('No such user /signin');
-      err.statusCode = 401;
-
-      return next(err);
+      // 401?
+      return next(new Unauthorized401('No user /signin'));
     }
 
     // need to await, must be boolean
     const pwdMatch = await compare(password, user.hashed_password);
 
     if (typeof pwdMatch !== 'boolean' || !pwdMatch) {
-      const err = Error('wrong password /signin');
-      err.statusCode = 401;
-
-      return next(err);
+      return next(new Unauthorized401('wrong pass /signin'));
     }
 
     const token = jwt.sign(
@@ -81,7 +77,7 @@ const signin = async (req, res, next) => {
     console.log('user at token');
 
     if (!result) {
-      return next(Error('error saving token'));
+      return next(new BadRequest400('error at saving token'));
     }
 
     // access by express-jwt through cookie
@@ -97,7 +93,6 @@ const signin = async (req, res, next) => {
 
     return res.json({ token, user: user.toObject() });
   } catch (error) {
-    // error.statusCode(401);
     return next(error);
   }
 };
@@ -106,8 +101,8 @@ const register = async (req, res, next) => {
   try {
     const { email, password, name } = req.body;
 
-    if (!email || !password || !name) {
-      return next(Error('all fields required'));
+    if (!email || !password) {
+      return next(new BadRequest400('all fields required'));
     }
 
     // password encrypt
@@ -123,7 +118,7 @@ const register = async (req, res, next) => {
     });
 
     if (!user) {
-      return next(Error('invalid user'));
+      return next(new Unauthorized401('invalid user'));
     }
 
     // strip
@@ -154,32 +149,37 @@ const refresh = async (req, res, next) => {
     console.log('user', user);
 
     if (!user) {
-      return res.sendStatus(403); // Forbidden
+      return next(new Forbidden403('forbidden'));
+      // return res.sendStatus(403); // Forbidden
     }
 
-    jwt.verify(refreshToken, process.env.REFRESH_SECRET, (err, decoded) => {
-      console.log('inside');
-      if (err || user.email !== decoded.email) {
-        console.log(err);
-        console.log('user', user.email);
-        console.log('decod', decoded);
-        return res.sendStatus(403);
-      } // forbidden
+    return jwt.verify(
+      refreshToken,
+      process.env.REFRESH_SECRET,
+      (err, decoded) => {
+        console.log('inside');
+        if (err || user.email !== decoded.email) {
+          console.log(err);
+          console.log('user', user.email);
+          console.log('decod', decoded);
+          return next(new Forbidden403('forbidden'));
+        } // forbidden
 
-      const token = jwt.sign(
-        { email: user.email, role: user.role },
-        process.env.JWT_SECRET,
-        {
-          expiresIn: '1hr'
-        }
-      );
+        const token = jwt.sign(
+          { email: user.email, role: user.role },
+          process.env.JWT_SECRET,
+          {
+            expiresIn: '1hr'
+          }
+        );
 
-      // strip
-      user.hashed_password = undefined;
-      user.salt = undefined;
+        // strip
+        user.hashed_password = undefined;
+        user.salt = undefined;
 
-      return res.json({ token, user });
-    });
+        return res.json({ token, user });
+      }
+    );
 
     // return res.json('refresh')
   } catch (error) {
@@ -189,9 +189,10 @@ const refresh = async (req, res, next) => {
 
 const logout = async (req, res, next) => {
   try {
-    await res.clearCookie('t');
+    await res.clearCookie('jwt');
 
-    return res.json('clear cookie');
+    // return res.json('clear cookie');
+    return res.sendStatus(204);
   } catch (error) {
     return next(error);
   }
@@ -201,8 +202,8 @@ const userById = async (req, res, next) => {
   try {
     const { userId } = req.params;
 
-    if (!mongoose.isValidObjectId(userId)) {
-      return next(Error('wrong id number'));
+    if (!userId || !mongoose.isValidObjectId(userId)) {
+      return next(new Unauthorized401('wrong id number'));
     }
 
     const user = await User.findById(userId)
@@ -210,7 +211,7 @@ const userById = async (req, res, next) => {
       .exec();
 
     if (!user) {
-      return next(Error('user not found'));
+      return next(new Unauthorized401('user not found'));
     }
 
     // mount
@@ -238,10 +239,11 @@ const isLogin = expressJwt({
 const isAuth = (req, res, next) => {
   try {
     // console.log({reqUser: req.user, reqAuth: req.auth })
-    const authorized = req.user && req.auth && req.user.email == req.auth.email;
+    const authorized =
+      req.user && req.auth && String(req.user.email) === String(req.auth.email);
 
     if (!authorized) {
-      return next(Error('User not Authorized!'));
+      return next(new Unauthorized401('User not Authorized!'));
     }
 
     return next();

@@ -15,10 +15,12 @@ const userSchema = new Schema(
       type: String,
       required: 'email is required',
       unique: 'email already exists',
-      match: [/.+@.+\..+/, 'Email must contain @'],
       trim: true,
+      lowercase: true, // forces to lowercase
       minlength: 4,
-      maxlength: 32
+      maxlength: 32,
+      // collation: { locale: 'en', strength: 2 },
+      match: [/.+@.+\..+/, 'Email must contain @'] // case-sensitive
     },
     role: {
       type: Array
@@ -90,7 +92,7 @@ userSchema
 // 'hashed_password'
 userSchema.path('salt').validate(function hashPassPathValidate(val) {
   // min of 5 char
-  if (this._password && this._password.length < 5) {
+  if (this._password && this._password.trim().length < 5) {
     // invalidates the incoming 'password'
     // Document#invalidate(<path>, <errorMsg>)
     this.invalidate('password', 'Password must be at least 5 chars');

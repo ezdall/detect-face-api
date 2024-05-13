@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 // const path = require('path');
 
-
 // main errorHandler
 const errorHandler = (error, req, res, next) => {
   const errorStatusCode = error.statusCode || 500;
@@ -12,8 +11,8 @@ const errorHandler = (error, req, res, next) => {
     console.error('| ==-- Error-Reason --== |:', errorReason);
   }
 
-  console.error('| ==--- MyErrorStack ---== |:', error.stack);
-  // console.log({error})
+  // console.error('| ==--- MyErrorStack ---== |:', error.stack);
+  console.log(String(error));
 
   // sent to default express errorHandler
   // can trigger if two res. ex. res.render() and res.json()
@@ -30,24 +29,50 @@ const errorHandler = (error, req, res, next) => {
     });
   }
 
-  if(error.statusCode === 400){
+  if (error.statusCode === 400) {
     return res.status(400).json({
       error: `${error.name} : ${error.message}`
-    })
+    });
   }
 
-   if(error.statusCode === 401){
+  if (error.statusCode === 401) {
     return res.status(401).json({
       error: `${error.name} : ${error.message}`
-    })
+    });
+  }
+
+  // to separate maybe
+  if (['TokenExpiredError', 'JsonWebTokenError'].includes(error.name)) {
+    return res.status(401).json({
+      error: error.message
+    });
   }
 
   // mongoose Error, duplicate
-  if(error.name === 'MongoError' && error.code === (11000 || 11001)){
-    const uniqueVal = Object.values(error.keyValue)
+  // && error.keyPattern.email
+  if (error.name === 'MongoError' && [11000, 11001].includes(error.code)) {
+    const uniqueVal = Object.values(error.keyValue);
 
     // console.log(getUniqueErrorMessage(error))
-    return res.status(409).json({ error: `${uniqueVal} already exist`})
+    return res.status(409).json({ error: `${uniqueVal} already exist` });
+  }
+
+  if (error.name === 'ValidationError') {
+    // console.log('--Validation Error--');
+
+    return res.status(400).json({
+      error: 'validation error'
+    });
+  }
+
+  if (error.name === 'MongooseError') {
+    console.log('--Mongoose Error--');
+  }
+
+  if (error.name === 'UrlError') {
+    return res.status(404).json({
+      error: `cannot do ${req.method} on ${req.url}`
+    });
   }
 
   // if (errorStatusCode === 301) {
@@ -61,11 +86,6 @@ const errorHandler = (error, req, res, next) => {
   //   return res
   //     .status(errorStatusCode)
   //     .sendFile(path.join(__dirname, '..', 'views', '404.html'));
-  // }
-
-  // this will, always
-  // if (req.accepts('json')) {
-  //   return res.status(errorStatusCode).json({ error: '404 not found' });
   // }
 
   // clientError??

@@ -9,17 +9,17 @@ const { BadRequest400 } = require('../helpers/bad-request.error');
 const { Unauthorized401 } = require('../helpers/unauthorized.error');
 const { NotFound404 } = require('../helpers/not-found.error');
 const { Forbidden403 } = require('../helpers/forbidden.error');
-const { isTokenExpired } = require('../helpers/is-token-expired');
+// const { isTokenExpired } = require('../helpers/is-token-expired');
 
 const signin = async (req, res, next) => {
   try {
     const authorization =
       req.headers.authorization || req.headers.Authorization;
-    const currToken = authorization && authorization.replace('Bearer ', '');
 
-    // console.log('auth:', authorization)
+    const currToken = authorization?.replace('Bearer ', '');
 
-    if (currToken && !isTokenExpired(currToken)) {
+    // if (currToken && !isTokenExpired(currToken)) {
+    if (currToken) {
       const decoded = jwt.verify(currToken, process.env.JWT_SECRET);
 
       // toObject vs lean()
@@ -36,7 +36,7 @@ const signin = async (req, res, next) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return next(new BadRequest400('all field required /signin'));
+      return next(new BadRequest400('all fields required /signin'));
     }
 
     const user = await User.findOne({ email }).exec();

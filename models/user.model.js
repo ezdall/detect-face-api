@@ -50,11 +50,16 @@ const userSchema = new Schema(
  *  pre save
  */
 
-// hard to detect error for async
-// need to transfer, password-handling at auth.cont.js
-// for good error handling
+// ? hard to detect error for async
+// ? need to transfer, password-handling at auth.cont.js
+// ? for good error handling
+
 // userSchema.pre('save', async function(next) {
 //   try{
+//        if(!this.isModified('password')){
+//         return next()
+//      }
+
 //     this.salt = await genSalt();
 //     this.hashed_password = await hash(this._password, this.salt)
 
@@ -64,6 +69,15 @@ const userSchema = new Schema(
 //   }
 
 // });
+
+/**
+ *  Methods
+ */
+
+// userSchema.methods.comparePass = async function(password){
+// await?
+// return compare(password, this.password);
+// }
 
 /**
  *  Statics

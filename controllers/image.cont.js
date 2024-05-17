@@ -4,6 +4,9 @@ const { ClarifaiStub, grpc } = require('clarifai-nodejs-grpc');
 
 const User = require('../models/user.model');
 
+const { BadRequest400 } = require('../helpers/bad-request.error');
+const { Unauthorized401 } = require('../helpers/unauthorized.error');
+
 // const clarifaiApp = new clarifai.App({
 //   apiKey: process.env.CLARIFAI_API_KEY
 // });
@@ -14,10 +17,6 @@ const User = require('../models/user.model');
 
 // new
 const requestApi2 = async (req, res, next) => {
-  const { body } = req;
-
-  console.log({ body });
-
   const stub = ClarifaiStub.grpc();
 
   // This will be used by every Clarifai endpoint call
@@ -28,19 +27,28 @@ const requestApi2 = async (req, res, next) => {
     {
       model_id: 'face-detection',
       inputs: [
-        { data: { image: { url: req.body.input, allow_duplicate_url: true } } }
+        {
+          data: {
+            image: {
+              url: req.body.input
+              // allow_duplicate_url: true
+            }
+          }
+        }
       ]
     },
     metadata,
     (err, response) => {
       if (err) {
+        console.log({ ...err });
         return next(err);
       }
 
+      // if not success (10,000)
       if (response.status.code !== 10000) {
-        // console.log(IMAGE_URL)
-        console.log(response.status.description);
-        return Error(`status: ${response.status.description}`);
+        // console.log({ ...response });
+
+        return next(new BadRequest400(response.status.description));
       }
 
       // Since we have one input, one output will exist here
@@ -56,50 +64,9 @@ const requestApi2 = async (req, res, next) => {
   );
 };
 
-// old
-const requestApi = async (req, res, next) => {
-  try {
-    const { body } = req;
-
-    // const data = await clarifaiApp.models.predict(
-    // clarifai.FACE_DETECT_MODEL,
-    // clarifai.DEMOGRAPHICS_MODEL,
-    // id: 'aa7f35c01e0642fda5cf400f543e7c40'
-    // 'aaa03c23b3724a16a56b629203edc62c',
-    // a403429f2ddf4b49b307e318f00e528b
-
-    //   {
-    //     id: 'a403429f2ddf4b49b307e318f00e528b',
-    //     version: '34ce21a40cc24b6b96ffee54aabff139'
-    //   },
-    //   req.body.input
-    // );
-
-    // if (!data) {
-    //   return next(Error('no clarifai data'));
-    // }
-
-    // const user = await User.findOne({ email: 'joejoe@gmail.com' })
-    //   .select('history')
-    //   .exec();
-
-    // if (!user) {
-    //   return next(Error('no user'));
-    // }
-
-    // user.history.push(body.input);
-    // await user.save();
-
-    // return res.json(data);
-  } catch (error) {
-    console.log(error.toString());
-    return next(error);
-  }
-};
-
 const handleImage = async (req, res, next) => {
   try {
-    const { body, auth } = req;
+    const { body } = req;
 
     // if (auth.email !== body.email) {
     //   throw Error('email not match, unauthorized');
@@ -108,6 +75,10 @@ const handleImage = async (req, res, next) => {
     const user = await User.findOne({ email: body.email })
       .select('history')
       .exec();
+
+    if (!user) {
+      return next(new Unauthorized401('invalid user /handleImage'));
+    }
 
     user.history.push(body.input);
     await user.save();

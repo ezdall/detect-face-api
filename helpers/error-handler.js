@@ -12,7 +12,9 @@ const errorHandler = (error, req, res, next) => {
   }
 
   // console.error('| ==--- MyErrorStack ---== |:', error.stack);
-  console.log(String(error));
+  console.log({
+    ...error
+  });
 
   // sent to default express errorHandler
   // can trigger if two res. ex. res.render() and res.json()
@@ -43,6 +45,7 @@ const errorHandler = (error, req, res, next) => {
 
   // to separate maybe
   if (['TokenExpiredError', 'JsonWebTokenError'].includes(error.name)) {
+    console.log(error.name);
     return res.status(401).json({
       error: error.message
     });
@@ -51,6 +54,8 @@ const errorHandler = (error, req, res, next) => {
   // mongoose Error, duplicate
   // && error.keyPattern.email
   if (error.name === 'MongoError' && [11000, 11001].includes(error.code)) {
+    console.log(error.name);
+
     const uniqueVal = Object.values(error.keyValue);
 
     // console.log(getUniqueErrorMessage(error))
@@ -58,8 +63,7 @@ const errorHandler = (error, req, res, next) => {
   }
 
   if (error.name === 'ValidationError') {
-    // console.log('--Validation Error--');
-
+    console.log(error.name);
     return res.status(400).json({
       error: 'validation error'
     });

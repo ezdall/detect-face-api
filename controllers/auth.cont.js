@@ -13,6 +13,7 @@ const { Forbidden403 } = require('../helpers/forbidden.error');
 
 const signin = async (req, res, next) => {
   try {
+    // use token(bearer) if there is
     const authorization =
       req.headers.authorization || req.headers.Authorization;
 
@@ -22,10 +23,9 @@ const signin = async (req, res, next) => {
     if (currToken) {
       const decoded = jwt.verify(currToken, process.env.JWT_SECRET);
 
-      // toObject vs lean()
       const user = await User.findOne({ email: decoded.email }).lean().exec();
 
-      console.log('user using old-token:', user.email);
+      // console.log('user using old-token:', user.email);
 
       user.hashed_password = undefined;
       user.salt = undefined;
@@ -33,6 +33,7 @@ const signin = async (req, res, next) => {
       return res.json({ user });
     }
 
+    // login normally
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -51,7 +52,7 @@ const signin = async (req, res, next) => {
     // need to await, must be boolean
     const pwdMatch = await compare(password, user.hashed_password);
 
-    if (typeof pwdMatch !== 'boolean' || !pwdMatch) {
+    if (!pwdMatch) {
       return next(new Unauthorized401('wrong pass /signin'));
     }
 
@@ -91,7 +92,8 @@ const signin = async (req, res, next) => {
     user.hashed_password = undefined;
     user.salt = undefined;
 
-    return res.json({ token, user: user.toObject() });
+    // user.toObject() ?
+    return res.json({ token, user });
   } catch (error) {
     return next(error);
   }
@@ -191,7 +193,6 @@ const logout = async (req, res, next) => {
   try {
     await res.clearCookie('jwt');
 
-    // return res.json('clear cookie');
     return res.sendStatus(204);
   } catch (error) {
     return next(error);

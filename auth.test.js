@@ -1,8 +1,7 @@
 require('dotenv').config();
+const mongoose = require('mongoose');
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
-
-// const mongoose = require('mongoose');
 
 const User = require('./models/user.model');
 const { connectMDB, mongoDisconnect } = require('./db');
@@ -54,6 +53,7 @@ const lackPassRegister = {};
 
 beforeAll(async () => {
   await connectMDB();
+  await request(expressApp).post('/register').send(validLogin);
 });
 
 // beforeEach(async () => {});
@@ -61,77 +61,9 @@ beforeAll(async () => {
 // afterEach(async () => {});
 
 afterAll(async () => {
-  const user = await User.findOne({ email: validRegister.email }).exec();
-
-  // delete reg-user after test
-  if (user) {
-    await user.deleteOne();
-  }
+  await mongoose.connection.dropCollection('users');
 
   await mongoDisconnect();
-});
-
-// [] TODO, dealing w/ isLogin()
-// Error must be jwt-express
-
-// console.log({
-//   body: resp.body,
-//   head: resp.headers
-// });
-
-describe('POST /register', () => {
-  it('register success (201)', async () => {
-    // supertest has convenient way http
-    const { body } = await request(expressApp)
-      .post('/register')
-      .send(validRegister)
-      .expect('Content-Type', /json/) // regex json
-      .expect(201);
-
-    expect(body).toHaveProperty('user');
-
-    expect(body.user).toMatchObject({
-      email: validRegister.email
-    });
-
-    // no password related
-    expect(body.user).not.toHaveProperty('password');
-    expect(body.user).not.toHaveProperty('salt');
-    expect(body.user).not.toHaveProperty('hashed_password');
-  });
-
-  it('register duplicate (409) error', async () => {
-    const { body } = await request(expressApp)
-      .post('/register')
-      .send(validLogin)
-      .expect('Content-Type', /json/)
-      .expect(409); // express-jwt duplicate error
-
-    expect(body.error).toMatch(/already exist/);
-  });
-
-  it('register duplicate (409) in upper-case', async () => {
-    // email has lowercase: true
-
-    const { body } = await request(expressApp)
-      .post('/register')
-      .send(casedLogin)
-      .expect('Content-Type', /json/)
-      .expect(409); //
-
-    expect(body.error).toMatch(/already exist/);
-  });
-
-  it('register w/ space-password, (400) error', async () => {
-    const { body } = await request(expressApp)
-      .post('/register')
-      .send(spacePassRegister)
-      .expect('Content-Type', /json/)
-      .expect(400); //
-
-    expect(body.error).toMatch(/validation error/);
-    // expect(body.error).toMatch(/all fields required/);
-  });
 });
 
 describe('POST /signin', () => {
@@ -150,14 +82,37 @@ describe('POST /signin', () => {
       // or /jwt=.*; Max-Age=\d+; Path=\/; Expires=.*; HttpOnly/
     );
 
-    // has token, user
-    expect(body).toHaveProperty('token');
-    expect(body).toHaveProperty('user');
+    // has token, user, refresh
+    // expect(body).toHaveProperty('token');
+    // expect(body).toHaveProperty('user');
+    // expect(body).toHaveProperty('user.refresh_token');
 
-    // has refresh-token?
+    expect(body).toMatchObject({
+      token: expect.any(String),
+      user: expect.any(Object)
+    });
 
-    // email is same w/ response
-    expect(body.user).toMatchObject({ email: validLogin.email });
+    // check user
+    // expect(body.user).toHaveProperty('_id'); // mdb
+    // expect(body.user).toMatchObject({ email: validLogin.email });
+
+    expect(body.user).toMatchObject({
+      email: validLogin.email,
+      refresh_token: expect.any(String),
+      _id: expect.any(String)
+    });
+
+    // check token
+    const decoded = jwt.verify(body.token, process.env.JWT_SECRET);
+
+    expect(decoded).toMatchObject({
+      email: validLogin.email,
+      iat: expect.any(Number),
+      exp: expect.any(Number)
+    });
+
+    // expect(decoded).toHaveProperty('iat');
+    // expect(decoded).toHaveProperty('exp')
 
     // no password related
     expect(body.user).not.toHaveProperty('password');
@@ -177,6 +132,7 @@ describe('POST /signin', () => {
     expect(body).toHaveProperty('user');
 
     expect(body.user).toMatchObject({ email: validLogin.email });
+    expect(body.user).toHaveProperty('_id');
 
     // no password related
     expect(body.user).not.toHaveProperty('password');
@@ -245,14 +201,60 @@ describe('GET /logout', () => {
   });
 });
 
-// describe('get users', () => {
-//   it('GET /users show all users', async () => {
-//     // supertest has convenient way http
-//     await request(expressApp)
-//       .get('/users')
-//       .expect('Content-Type', /json/) // regex json
-//       .expect(200);
-//   });
+/** * * *    REGISTER    * * */
 
-//   console.log({ agent });
-// })
+describe('POST /register', () => {
+  it('register success (201)', async () => {
+    // supertest has convenient way http
+    const { body } = await request(expressApp)
+      .post('/register')
+      .send(validRegister)
+      .expect('Content-Type', /json/) // regex json
+      .expect(201);
+
+    expect(body).toHaveProperty('user');
+
+    expect(body.user).toHaveProperty('_id');
+    expect(body.user).toMatchObject({
+      email: validRegister.email
+    });
+
+    // no password related
+    expect(body.user).not.toHaveProperty('password');
+    expect(body.user).not.toHaveProperty('salt');
+    expect(body.user).not.toHaveProperty('hashed_password');
+  });
+
+  it('register duplicate (409) error', async () => {
+    const { body } = await request(expressApp)
+      .post('/register')
+      .send(validLogin) // duplicate
+      .expect('Content-Type', /json/)
+      .expect(409); // express-jwt duplicate error
+
+    expect(body.error).toMatch(/already exist/);
+  });
+
+  it('register duplicate (409) in upper-case', async () => {
+    // email has lowercase: true
+
+    const { body } = await request(expressApp)
+      .post('/register')
+      .send(casedLogin)
+      .expect('Content-Type', /json/)
+      .expect(409); //
+
+    expect(body.error).toMatch(/already exist/);
+  });
+
+  it('register w/ space-password, (400) error', async () => {
+    const { body } = await request(expressApp)
+      .post('/register')
+      .send(spacePassRegister)
+      .expect('Content-Type', /json/)
+      .expect(400); //
+
+    expect(body.error).toMatch(/validation error/);
+    // expect(body.error).toMatch(/all fields required/);
+  });
+});

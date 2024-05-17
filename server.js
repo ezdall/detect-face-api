@@ -1,4 +1,4 @@
-const http = require('http');
+// const http = require('http');
 const mongoose = require('mongoose');
 
 const app = require('./app');
@@ -8,7 +8,7 @@ connectMDB().catch(err => console.error('connect-mongodb Error', err.stack));
 
 const PORT = process.env.PORT || 3000;
 
-const server = http.createServer(app);
+// const server = http.createServer(app);
 
 mongoose.connection.once('open', () => {
   const isProd = process.env.NODE_ENV === 'production';
@@ -18,7 +18,7 @@ mongoose.connection.once('open', () => {
     ? 'detect-face-srv.onrender.com'
     : `localhost:${PORT}`;
 
-  server.listen(PORT, err => {
+  app.listen(PORT, async err => {
     if (err) throw err;
     console.log(`DetectFace-Srv -${nodeEnv}- running at ${hostNamePort}`);
   });

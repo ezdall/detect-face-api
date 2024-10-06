@@ -10,6 +10,7 @@ const cookieParser = require('cookie-parser');
 
 const { corsOptions } = require('./helpers/cors-opts');
 const { errorHandler } = require('./helpers/error-handler');
+const { UrlError } = require('./helpers/url.error');
 //
 const { userRouter } = require('./routes/user.route');
 
@@ -28,7 +29,7 @@ app.use('/', [userRouter]);
 
 // catch all
 app.all('*', (req, res, next) => {
-  const error = new Error(`${req.ip} tried to access ${req.originalUrl}`);
+  const error = new UrlError(`${req.ip} tried to access ${req.originalUrl}`);
 
   return next(error);
 });

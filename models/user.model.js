@@ -105,7 +105,7 @@ userSchema
 // validate this._password (virtual)
 // 'hashed_password'
 userSchema.path('salt').validate(function hashPassPathValidate(val) {
-  // min of 5 char
+  // at least 6, trim then checks
   if (this._password && this._password.trim().length < 5) {
     // invalidates the incoming 'password'
     // Document#invalidate(<path>, <errorMsg>)

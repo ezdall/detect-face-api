@@ -191,7 +191,7 @@ const refresh = async (req, res, next) => {
 
 const logout = async (req, res, next) => {
   try {
-    await res.clearCookie('jwt');
+    res.clearCookie('jwt');
 
     return res.sendStatus(204);
   } catch (error) {

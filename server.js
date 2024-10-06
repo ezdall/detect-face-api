@@ -18,7 +18,7 @@ mongoose.connection.once('open', () => {
     ? 'detect-face-srv.onrender.com'
     : `localhost:${PORT}`;
 
-  app.listen(PORT, async err => {
+  app.listen(PORT, err => {
     if (err) throw err;
     console.log(`DetectFace-Srv -${nodeEnv}- running at ${hostNamePort}`);
   });

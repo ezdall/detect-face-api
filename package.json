@@ -1,5 +1,5 @@
 {
-  "name": "face-detect-api-mdb",
+  "name": "face-detect-api",
   "version": "1.0",
   "description": "api for face-detect app",
   "main": "server.js",
